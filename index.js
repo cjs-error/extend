@@ -45,14 +45,19 @@ function BaseError(message, constructor) {
   constructor.last = this;
   constructor.thrown++;
 
-  var stackTraceLimit = Error.stackTraceLimit;
+  if (constructor.stackTraceLimit) {
+    var stackTraceLimit = Error.stackTraceLimit;
 
-  try {
-    Error.stackTraceLimit = constructor.stackTraceLimit;
-    constructor.captureStackTrace(this, constructor);
+    try {
+      Error.stackTraceLimit = constructor.stackTraceLimit;
+      Error.captureStackTrace(this, constructor);
+    }
+    finally {
+      Error.stackTraceLimit = stackTraceLimit;
+    }
   }
-  finally {
-    Error.stackTraceLimit = stackTraceLimit;
+  else {
+    Error.captureStackTrace(this, constructor);
   }
 
   return this;
@@ -120,13 +125,13 @@ function extend(name, prototype) {
         else { // Attempt normal assignment
           error.constructor = constructor
         }
-        // The real magic
         setPrototypeOf(error, constructor.prototype);
       }
     }
     else {
       // ExtendedError(...) without `new`
-      error = constructor ? create(constructor.prototype) : create(ExtendedError.prototype);
+      constructor = constructor || ExtendedError;
+      error = create(constructor.prototype);
     }
 
     return BaseError.call(error, message, constructor);
