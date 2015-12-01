@@ -55,6 +55,12 @@ ExtendedError.extend; // method
 ExtendedError.thrown; // constructor specific error count
 ExtendedError.last; // the last error constructed
 
+// stackTraceLimit is inherited and each constructor may have its own stackTraceLimit
+ExtendedError.stackTraceLimit = Infinity;
+// Now all errors that inherit from ExtendedError will an infinite stack trace
+// unless they have set their own
+console.log(global.Error.stackTraceLimit === ExtendedError.stackTraceLimit) // false
+
 // The enumerable properties of a prototype object passed to "extend" will be copied by descriptor
 var prototype = { name: 'OptionalName' }
 Object.defineProperty(prototype, 'prop', {
