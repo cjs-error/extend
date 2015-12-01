@@ -31,15 +31,15 @@ var SystemError = Error.extend('SystemError', {
 // With prototype
 var OpenError = SystemError.extend({ name: 'OpenError', syscall: 'open' });
 
-throw CustomError('message' /* optional context */)
+throw CustomError('message' /* optional constructorOpt */)
 throw OpenError('ENOENT: no such file or directory, open ./non-existant/').
   with('ENOENT', -2, './non-existant/')
 ```
 
-## Context
-Example: `Error(message, context)`
+## constructorOpt
+Example: `Error.call(error, message, constructorOpt)`
 
-Context is an optional argument that can be passed to `Error.captureStackTrace`. The context is handled automatically when inheriting from an _extended error constructor_ even by means other than `extend`. However if you wish to investigate then read about the [constructorOpt from the v8 wiki ](https://github.com/v8/v8/wiki/Stack%20Trace%20API#stack-trace-collection-for-custom-exceptions)
+The constructorOpt is an optional argument that may be passed to `Error.captureStackTrace`. The constructorOpt might be needed if subclassing _extended error constructor_ by means other than `extend`. If you wish to learn more then read about the [constructorOpt from the v8 wiki ](https://github.com/v8/v8/wiki/Stack%20Trace%20API#stack-trace-collection-for-custom-exceptions)
 
 Note: _extended error constructor_ is the constructor returned from `require('@cjs-error/extend')` or `Error.extend`
 
@@ -80,7 +80,7 @@ var sameInheritanceChain = Object.getPrototypeOf(error)
 
 if (error instanceof Error && !(error instanceof MyError)) {
   // Then the result of Error.call will be that "error" becomes an instanceof MyError
-  MyError.call(error, message, context)
+  MyError.call(error, message, ctorOpt)
   
   console.log(error.constructor === MyError) // true
   console.log(error instanceof MyError) // true

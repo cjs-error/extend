@@ -6,7 +6,7 @@ var defineProperty = Object.defineProperty;
 var defineProperties = Object.defineProperties;
 var setPrototypeOf = Object.setPrototypeOf;
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-var hasOwnProperty = Object.prototype.hasOwnProperty;
+var create = Object.create;
 var keys = Object.keys;
 
 // Array Shortcuts
@@ -39,18 +39,17 @@ defineProperty(BaseError, 'extend', { configurable: true, writable: true, value:
 // Export the custom Error class
 module.exports = BaseError.extend('Error');
 
-function BaseError(message, context, constructor) {
+function BaseError(message, constructor) {
   if (message) this.message = message;
 
   constructor.last = this;
   constructor.thrown++;
 
   var stackTraceLimit = Error.stackTraceLimit;
-  context = context || constructor;
 
   try {
     Error.stackTraceLimit = constructor.stackTraceLimit;
-    constructor.captureStackTrace(this, context);
+    constructor.captureStackTrace(this, constructor);
   }
   finally {
     Error.stackTraceLimit = stackTraceLimit;
@@ -96,32 +95,41 @@ function extend(name, prototype) {
   // `ExtendedError.name === ExtendedError.prototype.name`, note: `ExtendedError.name` becomes immutable
   defineProperty(ExtendedError, 'name', { value: ExtendedError.prototype.name });
 
-  // var example = new Instance(); console.log(example.constructor === ExtendedError); // true
-  function Instance(){}
-  Instance.prototype = ExtendedError.prototype;
-
   // Return the newly created Constructor function
   return ExtendedError;
 
   // The `ExtendedError` declaration will be hoisted to the top of this scope at runtime
-  function ExtendedError(message, context) {
-    if (this instanceof Error) {
-      if (!(this instanceof ExtendedError)) {
-        // Attempt to transform the error into an instanceof ExtendedError
-        if (!hasOwnProperty.call(this, 'constructor') || delete this.constructor) {
-          defineProperty(this, 'constructor', { configurable: true, writable: true, value: ExtendedError });
-        }
-        else { // Attempt normal assignment
-          this.constructor = ExtendedError;
-        }
-        setPrototypeOf(this, ExtendedError.prototype);
+  function ExtendedError(message, constructor) {
+    var error = this;
+    if (error instanceof Error) {
+      if (error instanceof ExtendedError) {
+        // new ExtendedError(...)
+        constructor = constructor || error.constructor
       }
       else {
-        return BaseError.call(this, message, context, this.constructor);
+        // ExtendedError.call(...)
+        constructor = constructor || ExtendedError;
+        // Attempt to transform the error into an instanceof constructor
+        if (delete error.constructor) {
+          defineProperty(error, 'constructor', {
+            configurable: true,
+            writable: true, 
+            value: constructor
+          });
+        }
+        else { // Attempt normal assignment
+          error.constructor = constructor
+        }
+        // The real magic
+        setPrototypeOf(error, constructor.prototype);
       }
     }
+    else {
+      // ExtendedError(...) without `new`
+      error = constructor ? create(constructor.prototype) : create(ExtendedError.prototype);
+    }
 
-    return BaseError.call(new Instance(), message, context, ExtendedError);
+    return BaseError.call(error, message, constructor);
   }
 }
 
