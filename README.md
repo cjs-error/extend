@@ -10,6 +10,10 @@ Comprehensive and powerful node.js Error API for creating custom errors and stac
 * `Error.extend(name)`
 * `Error.extend(name, prototype)`
 * `Error.extend(prototype)`
+* `Error.extend(constructor)`
+* `Error.extend(constructor, name)`
+* `Error.extend(constructor, name, prototype)`
+* `Error.extend(constructor, prototype)`
 
 ## Usage
 ```js
@@ -34,12 +38,21 @@ var OpenError = SystemError.extend({ name: 'OpenError', syscall: 'open' });
 throw CustomError('message' /* optional constructorOpt */)
 throw OpenError('ENOENT: no such file or directory, open ./non-existant/').
   with('ENOENT', -2, './non-existant/')
+  
+// With a custom constructor
+function MyError(message) {
+    return Error.call(this, message, MyError);
+}
+
+Error.extend(MyError);
+
+throw MyError('message');
 ```
 
 ## constructorOpt
 Example: `Error.call(error, message, constructorOpt)`
 
-The constructorOpt is an optional argument that may be passed to `Error.captureStackTrace`. The constructorOpt might be needed if subclassing _extended error constructor_ by means other than `extend`. If you wish to learn more then read about the [constructorOpt from the v8 wiki ](https://github.com/v8/v8/wiki/Stack%20Trace%20API#stack-trace-collection-for-custom-exceptions)
+The constructorOpt is an optional argument that may be passed to `Error.captureStackTrace` which might be needed if subclassing _extended error constructor_ by means other than `extend`. If you wish to learn more then read about the [constructorOpt from the v8 wiki ](https://github.com/v8/v8/wiki/Stack%20Trace%20API#stack-trace-collection-for-custom-exceptions)
 
 Note: _extended error constructor_ is the constructor returned from `require('@cjs-error/extend')` or `Error.extend`
 
@@ -58,7 +71,7 @@ ExtendedError.last; // the last error constructed
 // stackTraceLimit is inherited and each constructor may have its own stackTraceLimit
 ExtendedError.stackTraceLimit = Infinity;
 // Now all errors that inherit from ExtendedError will an infinite stack trace
-// unless they have set their own
+// unless they have set their own stackTraceLimit
 console.log(global.Error.stackTraceLimit === ExtendedError.stackTraceLimit) // false
 
 // The enumerable properties of a prototype object passed to "extend" will be copied by descriptor
@@ -73,7 +86,7 @@ Object.defineProperty(prototype, 'prop', {
 var MyError = ExtendedError.extend(prototype)
 console.log(MyError().prop) // my-prop
 
-// One last thing about using the ".call" of an extended error constructor
+// The ".call" of an extended error constructor
 var error = Error()
 var sameError = error
 var sameInheritanceChain = Object.getPrototypeOf(error)
@@ -88,8 +101,25 @@ if (error instanceof Error && !(error instanceof MyError)) {
   console.log(error === sameError) // true
   console.log(Object.getPrototypeOf(error) === sameInheritanceChain) // false
 }
+
+// About Error.extend(constructor, name, prototype)
+function test(message) {
+    // Use "return" to support calling test without the "new" keyword
+    return ExtendedError.call(this, message, test);
+}
+
+Error.extend(test);
+
+console.log(test.last) // null
+console.log(test.thrown) // 0
+console.log(test.name) // "Error"
+console.log(typeof(test.extend)) // "function"
+console.log(test.prototype instanceof ExtendedError) // true
+console.log(test.prototype instanceof Error) // true
+console.log(test.prototype.name) // "Error"
+
 ```
 
 ## License
 [The MIT License (MIT)](../master/LICENSE)
-* Copyright (c) 2015 [Rodney Teal](mailto:rodneyd.teal@gmail.com?subject=Regarding cjs-error)
+* Copyright (c) 2015 [Rodney Teal](mailto:cjs.error@gmail.com?subject=Regarding cjs-error/extend)

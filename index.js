@@ -63,48 +63,8 @@ function BaseError(message, constructor) {
   return this;
 }
 
-/*
- The following calls are all valid: (Square brackets denote optional arguments)
-   extend()
-   extend(name, [prototype])
-   extend(prototype, [name]) // if typeof(prototype) === "object" then `name` is ignored
-
- All arguments after the second argument are completely ignored
- */
-function extend(name, prototype) {
-  // i.e. `Constructor.extend()` in which case `Super === Constructor`
-  var Super = this, argType = typeof(name);
-
-  // See `ExtendedError` declaration/definition at the bottom of this scope
-  setPrototypeOf(ExtendedError.prototype, Super.prototype);
-  setPrototypeOf(ExtendedError, Super);
-
-  // `ExtendedError` own properties
-  defineProperties(ExtendedError, ownProps);
-
-  // arguments overloading
-  if (argType === 'string') {
-    ExtendedError.prototype.name = name;
-
-    if (arguments.length >= 2) {
-      // if two or more arguments then assume `prototype` is typeof "object"
-      // `assign` will throw on non-object
-      assign(ExtendedError.prototype, prototype);
-    }
-  }
-  else if (argType === 'object') {
-    // If name is typeof "object" then assume name is `prototype`
-    assign(ExtendedError.prototype, name);
-  }
-
-  // `ExtendedError.name === ExtendedError.prototype.name`, note: `ExtendedError.name` becomes immutable
-  defineProperty(ExtendedError, 'name', { value: ExtendedError.prototype.name });
-
-  // Return the newly created Constructor function
-  return ExtendedError;
-
-  // The `ExtendedError` declaration will be hoisted to the top of this scope at runtime
-  function ExtendedError(message, constructor) {
+function getExtendedError() {
+  return function ExtendedError(message, constructor) {
     var error = this;
     if (error instanceof Error) {
       if (error instanceof ExtendedError) {
@@ -118,7 +78,7 @@ function extend(name, prototype) {
         if (delete error.constructor) {
           defineProperty(error, 'constructor', {
             configurable: true,
-            writable: true, 
+            writable: true,
             value: constructor
           });
         }
@@ -135,7 +95,64 @@ function extend(name, prototype) {
     }
 
     return BaseError.call(error, message, constructor);
+  };
+}
+
+/*
+ The following calls are all valid: (Square brackets denote optional arguments)
+   // These calls return a new extended error function
+   extend()
+   extend(name, [prototype])
+   extend(prototype, [name]) // if typeof(prototype) === "object" then `name` is ignored
+
+   // The following calls return the given constructor argument
+   extend(constructor, [name, prototype])
+   extend(constructor, [name])
+   extend(constructor, [prototype])
+
+ All arguments after the second argument are completely ignored
+ unless arguments[0] is typeof "function"
+ */
+function extend(name, prototype) {
+  // i.e. `Constructor.extend()` in which case `Super === Constructor`
+  var Super = this, constructor, argType = typeof(name), args = arguments;
+
+  // If the first argument is typeof "function" then shift the arguments by 1
+  if (argType === 'function') {
+    constructor = name;
+    args = slice.call(arguments, 1);
+    argType = typeof(args[0]);
   }
+  else {
+    constructor = getExtendedError();
+  }
+
+  // Inherit from Super's constructor and prototype
+  setPrototypeOf(constructor.prototype, Super.prototype);
+  setPrototypeOf(constructor, Super);
+
+  // extended error constructor's own properties
+  defineProperties(constructor, ownProps);
+
+  // arguments overloading
+  if (argType === 'string') {
+    if (typeof(args[1]) === 'object') {
+      // if `prototype` is typeof "object"
+      assign(constructor.prototype, args[1]);
+    }
+
+    constructor.prototype.name = args[0];
+  }
+  else if (argType === 'object') {
+    // If name is typeof "object" then assume name is `prototype`
+    assign(constructor.prototype, args[0]);
+  }
+
+  // `ExtendedError.name === ExtendedError.prototype.name`, note: `ExtendedError.name` becomes immutable
+  defineProperty(constructor, 'name', { value: constructor.prototype.name });
+
+  // Return the extended error constructor
+  return constructor;
 }
 
 /* ----------------

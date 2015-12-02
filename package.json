@@ -1,6 +1,6 @@
 {
   "name": "@cjs-error/extend",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "description": "Comprehensive and powerful node.js Error API for creating custom errors and stack traces",
   "main": "index.js",
   "scripts": {
