@@ -1,3 +1,5 @@
+var assign = require('@cjs-error/utils');
+
 // Assign Error to a variable local to this module in case it gets overridden later on
 var Error = global.Error;
 
@@ -5,9 +7,7 @@ var Error = global.Error;
 var defineProperty = Object.defineProperty;
 var defineProperties = Object.defineProperties;
 var setPrototypeOf = Object.setPrototypeOf;
-var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var create = Object.create;
-var keys = Object.keys;
 
 // Array Shortcuts
 var slice = Array.prototype.slice;
@@ -153,20 +153,4 @@ function extend(name, prototype) {
 
   // Return the extended error constructor
   return constructor;
-}
-
-/* ----------------
-   Helper functions
-   ---------------- */
-
-// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign#Polyfill
-function assign(target) {
-  slice.call(arguments, 1).forEach(source => {
-    defineProperties(target, keys(source).reduce((descriptors, key) => {
-      descriptors[key] = getOwnPropertyDescriptor(source, key);
-      return descriptors;
-    }, {}));
-  });
-
-  return target;
 }
