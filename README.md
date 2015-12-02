@@ -116,8 +116,14 @@ console.log(test.name) // "Error"
 console.log(typeof(test.extend)) // "function"
 console.log(test.prototype instanceof ExtendedError) // true
 console.log(test.prototype instanceof Error) // true
+console.log(test() instanceof test) // true
+console.log((new test()) instanceof test) // true
 console.log(test.prototype.name) // "Error"
 
+Error.extend(test, 'TestError');
+
+console.log(test.name) // "TestError"
+console.log(test.prototype.name) // "TestError"
 ```
 
 ## License
